@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - {{ filename }}</title>
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Top Navigation / Header */
+        header {
+            background-color: var(--card-bg);
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+        
+        /* Container for the badge and delete button */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* The Delete Button */
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        /* Main Grid Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        pre {
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .ai-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>{{ filename }}</h1>
+            <p style="margin: 5px 0 0 0; color: var(--text-muted);">Project Dashboard</p>
+        </div>
+        
+        <div class="header-actions">
+            <span class="badge">Status: Loaded</span>
+            
+            <!-- THE DELETE BUTTON AND FORM -->
+            <!-- We point the action directly to a new Flask route -->
+            <form action="/SavedFiles/{{ filename }}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this project? This cannot be undone.');" style="margin: 0;">
+                <button type="submit" class="btn-danger">
+                    Delete Project
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Left Panel: JSON Data -->
+        <div class="card">
+            <h2>Raw Project Data</h2>
+            <pre>{{ project_data | tojson(indent=4) }}</pre>
+        </div>
+
+        <!-- Right Panel: AI Advice -->
+        <div class="card">
+            <h2>AI Advisor</h2>
+            <div class="ai-content">
+                {{ ai_advice }}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

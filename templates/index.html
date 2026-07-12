@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Urban Planning and Development{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  
+  <header>
+    <div>
+      <h1 style="margin:0; font-size: 24px;">Urban Development Workspace</h1>
+    </div>
+    <div class="header-controls">
+      <button type="button" id="export-btn" class="asset-button" style="display:inline-block; width:auto;"
+        onclick="handleExportJSON()">
+        Save Layout
+      </button>
+    </div>
+  </header>
+
+  {% block content %}
+
+
+  <div class="workspace">
+    <aside class="col-left panel">
+      <h2>Asset Catalog</h2>
+
+      <div class="drawer-section">
+        <h3>Commercial</h3>
+        <div class="asset-grid" id="commercial-grid">
+          <button type="button" class="asset-button" id="asset-btn-shop"
+            onclick="event.stopPropagation(); setActiveAsset('shop')">
+            <strong>Shops</strong><br><small style="color:#94a3b8">Density: High</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-mall"
+            onclick="event.stopPropagation(); setActiveAsset('mall')">
+            <strong>Malls</strong><br><small style="color:#94a3b8">Density: Low</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-skyscraper"
+            onclick="event.stopPropagation(); setActiveAsset('skyscraper')">
+            <strong>Skyscraper</strong><br><small style="color:#94a3b8">Density: Very Low</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <h3>Residential</h3>
+        <div class="asset-grid" id="residential-grid">
+          <button type="button" class="asset-button" id="asset-btn-apartment"
+            onclick="event.stopPropagation(); setActiveAsset('apartment')">
+            <strong>Apartments</strong><br><small style="color:#d7dce3">Density: High</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-suburban"
+            onclick="event.stopPropagation(); setActiveAsset('suburban')">
+            <strong>Suburban Home</strong><br><small style="color:#94a3b8">Density: Low</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-villas"
+            onclick="event.stopPropagation(); setActiveAsset('villas')">
+            <strong>Villas</strong><br><small style="color:#94a3b8">Density: Very Low</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-farmhouse"
+            onclick="event.stopPropagation(); setActiveAsset('farmhouse')">
+            <strong>Farmhouse</strong><br><small style="color:#94a3b8">Density: Very Low</small>
+          </button>
+        </div>
+      </div>
+    </aside>
+    <main class="col-center">
+      <div id="search-container">
+        <input id="map-search-input" type="text" placeholder="Search areas, roads, or landmarks..."
+          autocomplete="off" />
+        <div id="custom-suggestions" class="suggestions-hidden"></div>
+      </div>
+      <div id="map-viewport"></div>
+    </main>
+
+    <aside class="col-right panel">
+      <h2>AI Audit Hub</h2>
+      <div class="telemetry-status empty" id="telemetry-box" style="margin-bottom:10px;"></div>
+      <div class="chat-wrapper">
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input">
+          <input type="text" id="user-input" placeholder="Type a message"
+            onkeydown="if(event.key === 'Enter') sendChatMessage()" />
+          <button type="button" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  {% endblock %}
+
+  <script>
+    const assets = [
+      { id: 'shop', category: 'Commercial', name: 'Shops', icon: '/static/assets/pixelatedshop.webp' },
+      { id: 'mall', category: 'Commercial', name: 'Malls', icon: '/static/assets/pixelatedmall.png' },
+      { id: 'skyscraper', category: 'Commercial', name: 'Skyscraper', icon: '/static/assets/pixelatedskyscraper.jpg' },
+      { id: 'apartment', category: 'Residential', name: 'Apartments', icon: '/static/assets/pixelatedappartments.jpg' },
+      { id: 'suburban', category: 'Residential', name: 'Suburban Home', icon: '/static/assets/pixelatedhouse.webp' },
+      { id: 'villas', category: 'Residential', name: 'Villas', icon: '/static/assets/pixelatedvilla.webp' },
+      { id: 'farmhouse', category: 'Residential', name: 'Farmhouse', icon: '/static/assets/pixelatedfarmhouse.webp' }
+    ];
+
+    let map;
+    let activeAssetId = null;
+    let placedItems = [];
+
+    function initMap() {
+      // Mount base map layout
+      map = new google.maps.Map(document.getElementById("map-viewport"), {
+        center: { lat: 30.3753, lng: 69.3451 }, // Pakistan Focus
+        zoom: 5.5,
+        mapTypeId: 'roadmap',
+        mapTypeControl: false
+      });
+
+      const searchInput = document.getElementById("map-search-input");
+      const suggestionsBox = document.getElementById("custom-suggestions");
+
+      // Fetch live suggestion predictions on keystroke inputs
+      searchInput.addEventListener("input", async () => {
+        const query = searchInput.value.trim();
+        if (query.length < 3) {
+          suggestionsBox.innerHTML = "";
+          return;
+        }
+
+        try {
+          // Query the free open-source API directly, biased near Pakistan's coordinates
+          const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=30.3753&lon=69.3451&limit=5`);
+          const data = await response.json();
+
+          suggestionsBox.innerHTML = "";
+
+          data.features.forEach(feature => {
+            const item = document.createElement("div");
+            item.className = "suggestion-item";
+
+            // Format location components safely
+            const name = feature.properties.name || "";
+            const city = feature.properties.city ? `, ${feature.properties.city}` : "";
+            const country = feature.properties.country ? `, ${feature.properties.country}` : "";
+            item.innerText = `${name}${city}${country}`;
+
+            // Handle choice click event
+            item.addEventListener("click", () => {
+              // Photon returns coordinates in [Longitude, Latitude] vector mapping format
+              const [lng, lat] = feature.geometry.coordinates;
+              const location = new google.maps.LatLng(lat, lng);
+
+              map.setCenter(location);
+              map.setZoom(14); // Pans down directly onto selection node
+
+              searchInput.value = item.innerText;
+              suggestionsBox.innerHTML = ""; // Clear suggestion drawer
+              appendChatMessage('bot', `Viewport moved to: ${item.innerText}`);
+            });
+
+            suggestionsBox.appendChild(item);
+          });
+        } catch (err) {
+          console.error("Geocoding fetch error:", err);
+        }
+      });
+
+      map.addListener("click", (e) => {
+        suggestionsBox.innerHTML = "";
+        handleMapClick(e.latLng);
+      });
+    }
+    function setActiveAsset(id) {
+      if (activeAssetId === id) {
+        activeAssetId = null;
+      } else {
+        activeAssetId = id;
+      }
+
+      document.querySelectorAll('.asset-button').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`asset-btn-${activeAssetId}`);
+
+      if (activeAssetId && activeBtn) {
+        activeBtn.classList.add('active');
+        const targetAsset = assets.find(a => a.id === activeAssetId);
+        appendChatMessage('bot', `System Tooling Active: Click anywhere on the Google Map to drop a ${targetAsset.name}.`);
+      }
+    }
+
+    function handleMapClick(latLng) {
+      if (!activeAssetId) return;
+
+      const currentAsset = assets.find(a => a.id === activeAssetId);
+      if (!currentAsset) return;
+
+      const lat = latLng.lat();
+      const lng = latLng.lng();
+
+      placedItems.push({
+        uniqueId: Date.now(),
+        name: currentAsset.name,
+        lat: lat,
+        lng: lng
+      });
+
+      new google.maps.Marker({
+        position: latLng,
+        map: map,
+        title: currentAsset.name,
+        icon: {
+          url: currentAsset.icon,
+          scaledSize: new google.maps.Size(32, 32)
+        }
+      });
+
+      placedItemsDisplayed();
+      appendChatMessage('bot', `System: Placed "${currentAsset.name}" at Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}.`);
+      setActiveAsset(null); // Deselect tool after placement
+    }
+
+    function placedItemsDisplayed() {
+      const telemetry = document.getElementById('telemetry-box');
+      const exportBtn = document.getElementById('export-btn');
+      if (placedItems.length > 0) {
+        exportBtn.disabled = false;
+        telemetry.innerHTML = `✓ Live Map Nodes: ${placedItems.length}`;
+      }
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('user-input');
+      const prompt = input.value.trim();
+      if (!prompt) return;
+
+      appendChatMessage('user', prompt);
+      input.value = '';
+
+      const response = await fetch("/chat",
+      {method: "POST",
+       headers: {'Content-Type': 'application/json'},
+       body: JSON.stringify({message:input})
+      }).then(function(response){
+
+        return response.json();
+      }).then(function(data){
+         appendChatMessage('bot', data.reply);
+      })}
+      
+    function appendChatMessage(sender, text) {
+      const chatBox = document.getElementById('chat-box');
+      const msg = document.createElement('div');
+      msg.style.marginBottom = "8px";
+      msg.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${text}`;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleExportJSON() {
+      const fullBlueprintState = {
+        savedAt: new Date().toISOString(),
+        totalNodes: placedItems.length,
+        nodes: placedItems
+      };
+
+      try {
+        localStorage.setItem('urbanBlueprintLayout', JSON.stringify(fullBlueprintState));
+        alert("Map configuration data successfully written to browser container storage!");
+      } catch (error) {
+        alert("Failed to save blueprint layout data.");
+      }
+    }
+  </script>
+
+  <script async defer
+ ></script> -->
+</body>
+
+</html>  //this is index.html

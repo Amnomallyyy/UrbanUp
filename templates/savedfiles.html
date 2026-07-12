@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Files</title>
+
+    <style>
+        /* Existing Button Styles */
+        .button-container {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 12px 16px;
+            background-color: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            max-width: 450px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s ease;
+        }
+
+        .button-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .button-container button {
+            width: 100%;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .button-container button:hover {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            color: #0f172a;
+        }
+
+        /* NEW: Styles for the input form */
+        .input-section {
+            margin-bottom: 30px;
+            max-width: 450px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-section input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .input-section button {
+            padding: 10px 16px;
+            background-color: #2563eb; /* A nice blue button */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .input-section button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+
+    <h2>Your Saved Files</h2>
+
+    <!-- 1. The NEW Form -->
+    <form id="file-form" class="input-section">
+        <input type="text" id="filename-input" name ='filename' placeholder="Enter file name (e.g. data.csv)" required>
+        <button type="submit">Add File</button>
+    </form>
+    
+    <!-- 2. The empty zone for buttons -->
+    <div id="file-dashboard"></div>
+
+    <script>
+        // The original function that builds the button
+        function createButtonElement(filename) { 
+            const container = document.createElement('div');
+            container.className = "button-container"; 
+
+            const myButton = document.createElement('button');
+            myButton.textContent = `/SavedFiles/${filename}`;
+           
+        myButton.addEventListener('click', function() {
+            console.log("THE FILENAME VALUE IS:", filename);
+
+            // 2. See exactly what the full URL looks like before leaving the page
+            const finalUrl = `/SavedFiles/${filename}`;
+    console.log("THE FULL URL GENERATED IS:", finalUrl);
+
+         window.location.href = `/SavedFiles/${filename}`;
+        });
+            container.appendChild(myButton);
+            
+            const dashboard = document.getElementById('file-dashboard');
+            dashboard.appendChild(container);
+        }
+
+        // NEW: Hooking up the form to the function
+        const fileForm = document.getElementById('file-form');
+        const filenameInput = document.getElementById('filename-input');
+
+        fileForm.addEventListener('submit', function(event) {
+            // This stops the browser from reloading the page when you click submit!
+            event.preventDefault(); 
+            
+            // Get the text the user typed in, and remove any accidental blank spaces at the ends
+            const enteredName = filenameInput.value.trim();
+
+            // Make sure it isn't empty, then create the button
+            if (enteredName !== "") {
+                createButtonElement(enteredName);
+                
+                // Clear the input box so it's ready for the next file!
+                filenameInput.value = "";
+            }
+        });
+    </script>
+</body>
+</html>
