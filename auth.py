@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from models import User, Project
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 from Final import db
 import json
+
 auth = Blueprint('auth', __name__)
 
 @auth.route('/')
@@ -24,8 +25,9 @@ def view_layout():
     except Exception as e:
         print(f"Error parsing shortcut payload: {e}")
         nodes_array = []
-        
-    return render_template('index.html', shared_layout=json.dumps(nodes_array)) 
+    
+    return render_template('working.html', shared_layout=json.dumps(nodes_array)) 
+   
 
 @auth.route('/signup', methods=["GET", "POST"])
 def signup():

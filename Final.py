@@ -22,7 +22,7 @@ def create_app():
     from models import User, Project
     from auth import auth
     from projectblueprint import Proj
-    #from aipro import Ai
+    from aipro import Ai
     
 
     with app.app_context():
@@ -31,7 +31,7 @@ def create_app():
 
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(Proj, url_prefix='/')
-   # app.register_blueprint(Ai, url_prefix='/')
+    app.register_blueprint(Ai, url_prefix='/')
 
     migrate = Migrate(app, db)
 
