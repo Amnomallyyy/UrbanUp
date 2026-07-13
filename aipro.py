@@ -13,7 +13,6 @@ import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-Ai = Blueprint("Ai",__name__)
 
 
 

@@ -134,7 +134,7 @@
     let activeAssetId = null;
     let placedItems = [];
     let lastAiAdvice = "No audit run yet."
-    const filenameInput = document.getElementById('blueprint-filename').value.trim() || "Untitled-Blueprint";
+    
     function initMap() {
       map = new google.maps.Map(document.getElementById("map-viewport"), {
         center: { lat: 30.3753, lng: 69.3451 }, 
@@ -277,53 +277,44 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    async function handleExportJSON() {
-      const fullBlueprintState = {
+   async function handleExportJSON() {
+    const fullBlueprintState = {
         savedAt: new Date().toISOString(),
         totalNodes: placedItems.length,
         nodes: placedItems
-      };
+    };
 
-      try {
+    try {
+        // Save local backup just in case
         localStorage.setItem('urbanBlueprintLayout', JSON.stringify(fullBlueprintState));
-        alert("Map configuration data successfully written to browser container storage!");
-        async function handleExportJSON() {
-  const fullBlueprintState = {
-    totalNodes: placedItems.length,
-    nodes: placedItems
-  };
+        const filenameInput = document.getElementById('blueprint-filename').value.trim() || "Untitled-Blueprint";
+        // 1. Create a hidden HTML form dynamically
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/createProj'; // Your Flask route
 
-  try {
-    
-    localStorage.setItem('urbanBlueprintLayout', JSON.stringify(fullBlueprintState));
+        // 2. Wrap all your data into a single JSON string inside a hidden input
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'project_payload';
+        hiddenInput.value = JSON.stringify({
+            jsonmapdata: placedItems,
+            aiadvice: lastAiAdvice,
+            filename: filenameInput
+        });
 
-    
-    const response = await fetch("/createProj", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({jsonmapdata:placedItems,
-                            aiadvice:lastAiAdvice,
-                            filename:filenameInput  })
-    });
+        // 3. Attach it to the page and submit it
+        form.appendChild(hiddenInput);
+        document.body.appendChild(form);
+        
+        // This triggers a full browser page change!
+        form.submit(); 
 
-    if (response.ok) {
-      alert("Success: Layout saved to the main database!");
-    } else {
-      alert("Server error: Could not save to database, but a local backup was kept.");
-    }
-    
-  } catch (error) {
-    console.error("Save Error:", error);
-  }
-}
-    
-    
-    
     } catch (error) {
-        alert("Failed to save blueprint layout data.");
-      }
+        alert("Failed to initiate project export.");
     }
-
+}
+ 
     /* =========================================================================
        NEW LOGIC: Target Objectives Modal & Automated Layout Audit Handling
        ========================================================================= */
@@ -386,7 +377,7 @@ await fetch("/auditAI", {
 
   <!-- SANITIZED SECURITY STEP: Swapped your live API key string with a placeholder variable link -->
   <script async defer
-    ></script>
+  ></script>
 </body>
 
 </html>

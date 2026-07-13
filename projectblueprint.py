@@ -17,19 +17,37 @@ Proj = Blueprint('Proj',__name__)
    
 @Proj.route("/createProj", methods = ['GET','POST'])
 def saveFiles():
-        if request.method == "POST":
-            data = request.get_json() or {}
-            filename = data.get('filename', "")
-            aiAdvice = data.get('aiadvice','')
-            jsonMapData = data.get('jsonmapdata',[])
-            project = Project(
-                fileName = filename,
-                aiAdvice = aiAdvice,
-                jsonMapData = jsonMapData)
-            db.session.add(project,user_id = current_user.id)
-            db.session.commit()
-            redirect(url_for('Proj.SavedFiles', filename = filename))
-        return render_template("savedfiles.html", user = current_user)
+    if request.method == "POST":
+      
+        raw_payload = request.form.get('project_payload')
+        
+        
+        if raw_payload:
+            data = json.loads(raw_payload)
+        else:
+            data = {}
+
+      
+        filename = data.get('filename', "")
+        aiAdvice = data.get('aiadvice', "")
+        jsonMapData = data.get('jsonmapdata', [])
+        
+        
+        project = Project(
+            fileName=filename,
+            aiAdvice=aiAdvice,
+            jsonMapData=json.dumps(jsonMapData),
+            user_id=current_user.id
+        )
+        db.session.add(project)
+        db.session.commit()
+        
+        
+        return render_template("savedfiles.html", user=current_user)
+    return render_template('working.html')
+
+    
+        
 
 
 
