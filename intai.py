@@ -8,12 +8,16 @@ from google import genai
 from pydantic import BaseModel, Field
 from google.genai.errors import APIError
 
+
+
+
+
+
 class AuditReport(BaseModel):
     sustainability_score: int = Field(description="Score from 0-100 based strictly on SDG math.")
     critical_warnings: list[str] = Field(description="Specific SDG or zoning violations found.")
     positive_highlights: list[str] = Field(description="Adherence to SDG goals.")
     actionable_advice: list[str] = Field(description="Strict, directional advice to improve the layout.")
-
 import math
 
 ZONE_TYPES = {

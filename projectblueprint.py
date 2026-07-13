@@ -51,31 +51,40 @@ def saveFiles():
 
 
 
-@Proj.route("/SavedFiles/<string:filename>")
-def project_details(filename):
-    files = db.get_or_404(Project,filename).first()
 
+@Proj.route("/SavedFiles/<string:filename>/<int:id>")
+def project_details(filename, id):
     
-    json_data =  files.json_data
-    ai_advice = files.ad_advice
+    files = db.get_or_404(Project, id) 
+
+   
+    try:
+        json_data = json.loads(files.jsonMapData)
+    except:
+      
+        json_data = [] 
+
+    ai_advice = files.aiAdvice
 
     return render_template(
         "da.html", 
-        filename=filename, 
+        filename=filename,
+        id=id,
         project_data=json_data, 
         ai_advice=ai_advice
     )
-  
-   
 
-@Proj.route("/SavedFiles/<filename>/delete", methods =["GET","POST"])
-def project_Delete(filename):
-        project  = db.get_or_404("POST")
-        if request.method == "POST":
-            db.session.delete(project)
-            db.sesssion.commit()
-            return render_template('savedfiles')
-        
+
+@Proj.route("/SavedFiles/<int:id>/delete", methods=["POST"])
+def project_Delete(id):
+    
+    
+    project = db.get_or_404(Project, id)
+    
+    db.session.delete(project)
+    db.session.commit()
+    
+    return redirect(url_for('Proj.SavedFiles'))
    
 
 

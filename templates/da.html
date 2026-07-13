@@ -141,8 +141,8 @@
             <span class="badge">Status: Loaded</span>
             
             <!-- THE DELETE BUTTON AND FORM -->
-            <!-- We point the action directly to a new Flask route -->
-            <form action="/SavedFiles/{{ filename }}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this project? This cannot be undone.');" style="margin: 0;">
+            <!-- UPDATED: Changed {{ filename }} to {{ id }} to match your Python route! -->
+            <form action="/SavedFiles/{{ id }}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this project? This cannot be undone.');" style="margin: 0;">
                 <button type="submit" class="btn-danger">
                     Delete Project
                 </button>

@@ -102,7 +102,7 @@
             {% for project in user.projects %}
                 <div class="button-container">
                     <!-- Automatically injects the filename into the button text and the URL -->
-                    <button onclick="window.location.href='/SavedFiles/{{ project.fileName }}'">
+                    <button onclick="window.location.href='/SavedFiles/{{ project.fileName }}/{{ project.id }}'">
                         📁 {{ project.fileName }}
                     </button>
                 </div>

@@ -13,47 +13,8 @@ import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-
-
-
-
-
-# AI.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-# CORS(AI)
-
-# model_name = 
-# model = AutoModelForCausalLM.from_pretrained(model_name)
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
-# conversation_history = []
-
-# @AI.route('/')
-# def home():
-#     return render_template('index.html')
-
-# @AI.route('/chatbot', methods=['POST'])
-# def handle_prompt():
-#     data = request.get_data(as_text=True)
-#     data = json.loads(data)
-#     input_text = data['prompt']
-    
-#     # Create conversation history string
-#     history = "\n".join(conversation_history)
-#     # Tokenize the input text and history
-#     inputs = tokenizer.encode_plus(history, input_text, return_tensors="pt")
-#     # Generate the response from the model
-#     outputs = model.generate(**inputs, max_length=100)
-#     # Decode the response
-#     response = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-    
-#     # Add interaction to conversation history
-#     conversation_history.append(input_text)
-#     conversation_history.append(response)
-#     return response
-
-
-# Make sure to import session at the top of your file!
 from flask import request, jsonify, session 
-
+Ai = Blueprint('Ai',__name__)
 @Ai.route("/chat", methods=["POST"])
 def chatAI():
     data = request.get_json() or {}
@@ -99,25 +60,7 @@ def auditAI():
     except Exception as e:
         print(f"Backend Audit Crash Details: {e}")
         return jsonify({'reply': 'The AI Audit engine encountered an unexpected error parsing the blueprint.'}), 500
-   
-
- 
-
-
-   
-   # Step 2: Import libraries and download your model
-# From the transformers library, we will use the pipeline class to download our model
-# from transformers import pipeline
-
-# # The pipeline class will manage the model for us
-# # We will use the 'EleutherAI/gpt-neo-125m' model for this project
-# # This will download the model to your local machine (1-2 minutes)
-# chatbot = pipeline('text-generation', model='EleutherAI/gpt-neo-125m')
-
-# # Step 3: Create a loop to talk to your chatbot
-# # This loop will allow you to have a continuous conversation
-# while True:
-#     
+          
 
 
 
