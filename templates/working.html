@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Urban Planning and Development{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  
+  <header>
+ 
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+  <h2 style="margin: 0;">Urban Development Workspace</h2>
+  
+  <input type="text" id="blueprint-filename" placeholder="Untitled-Blueprint" 
+         style="padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 200px; outline: none;">
+</div>
+    <div class="header-controls">
+      <button type="button" id="export-btn" class="asset-button" style="display:inline-block; width:auto;"
+        onclick="handleExportJSON()">
+        Save Layout
+      </button>
+    </div>
+  </header>
+
+  {% block content %}
+
+  <div class="workspace">
+    <aside class="col-left panel">
+      <h2>Asset Catalog</h2>
+
+      <div class="drawer-section">
+        <h3>Commercial</h3>
+        <div class="asset-grid" id="commercial-grid">
+          <button type="button" class="asset-button" id="asset-btn-shop"
+            onclick="event.stopPropagation(); setActiveAsset('shop')">
+            <strong>Shops</strong><br><small style="color:#94a3b8">Density: High</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-mall"
+            onclick="event.stopPropagation(); setActiveAsset('mall')">
+            <strong>Malls</strong><br><small style="color:#94a3b8">Density: Low</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-skyscraper"
+            onclick="event.stopPropagation(); setActiveAsset('skyscraper')">
+            <strong>Skyscraper</strong><br><small style="color:#94a3b8">Density: Very Low</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <h3>Residential</h3>
+        <div class="asset-grid" id="residential-grid">
+          <button type="button" class="asset-button" id="asset-btn-apartment"
+            onclick="event.stopPropagation(); setActiveAsset('apartment')">
+            <strong>Apartments</strong><br><small style="color:#d7dce3">Density: High</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-suburban"
+            onclick="event.stopPropagation(); setActiveAsset('suburban')">
+            <strong>Suburban Home</strong><br><small style="color:#94a3b8">Density: Low</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-villas"
+            onclick="event.stopPropagation(); setActiveAsset('villas')">
+            <strong>Villas</strong><br><small style="color:#94a3b8">Density: Very Low</small>
+          </button>
+          <button type="button" class="asset-button" id="asset-btn-farmhouse"
+            onclick="event.stopPropagation(); setActiveAsset('farmhouse')">
+            <strong>Farmhouse</strong><br><small style="color:#94a3b8">Density: Very Low</small>
+          </button>
+        </div>
+      </div>
+    </aside>
+    <main class="col-center">
+      <div id="search-container">
+        <input id="map-search-input" type="text" placeholder="Search areas, roads, or landmarks..."
+          autocomplete="off" />
+        <div id="custom-suggestions" class="suggestions-hidden"></div>
+      </div>
+      <div id="map-viewport"></div>
+    </main>
+
+    <aside class="col-right panel">
+      <!-- NEW: Objectives Toggle Button -->
+      <button type="button" class="asset-button" id="objectives-toggle-btn" 
+        style="width: 100%; margin-bottom: 15px; padding: 10px; background-color: #334155; font-weight: bold;" 
+        onclick="toggleObjectivesModal()">
+        🎯 Target Objectives
+      </button>
+
+      <h2>AI Audit Hub</h2>
+      <div class="telemetry-status empty" id="telemetry-box" style="margin-bottom:10px;"></div>
+      <div class="chat-wrapper">
+        <div class="chat-box" id="chat-box"></div>
+        <!-- UPDATED: Flex container holding Send and Audit actions seamlessly side-by-side -->
+        <div class="chat-input" style="display: flex; gap: 6px; width: 100%;">
+          <input type="text" id="user-input" placeholder="Type a message" style="flex: 1;"
+            onkeydown="if(event.key === 'Enter') sendChatMessage()" />
+          <button type="button" onclick="sendChatMessage()">Send</button>
+          <button type="button" id="audit-btn" onclick="triggerLayoutAudit()">Audit</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- NEW: Modal Overlay Container for entering Objectives safely -->
+  <div id="objectives-modal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center;">
+    <div style="background-color: #1e293b; color: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+      <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 18px;">Set Layout Objectives</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;">Define guidelines or target limits for the AI to track against during audits.</p>
+      <textarea id="objectives-textarea" rows="6" style="width: 100%; background-color: #0f172a; color: white; border: 1px solid #475569; border-radius: 4px; padding: 10px; font-family: inherit; resize: vertical; box-sizing: border-box;" placeholder="e.g., Maintain commercial high-density spacing, focus residential nodes in northern bounds..."></textarea>
+      <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" onclick="toggleObjectivesModal()" style="padding: 8px 14px; background-color: #475569; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Close</button>
+        <button type="button" onclick="saveObjectivesData()" style="padding: 8px 14px; background-color: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Save Setup</button>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+
+  <script>
+    const assets = [
+      { id: 'shop', category: 'Commercial', name: 'Shops', icon: 'static/pixelatedshop.webp' },
+      { id: 'mall', category: 'Commercial', name: 'Malls', icon: 'static/pixelatedmall.png' },
+      { id: 'skyscraper', category: 'Commercial', name: 'Skyscraper', icon: 'static/pixelatedskyscraper.jpg.jpeg' },
+      { id: 'apartment', category: 'Residential', name: 'Apartments', icon: 'static/pixelatedappartments.jpg.jpeg'},
+      { id: 'suburban', category: 'Residential', name: 'Suburban Home', icon: 'static/pixelatedhouse.webp' },
+      { id: 'villas', category: 'Residential', name: 'Villas', icon: 'static/pixelatedvilla.webp' },
+      { id: 'farmhouse', category: 'Residential', name: 'Farmhouse', icon: 'static/pixelatedfarmhouse.webp' }
+    ];
+
+    let map;
+    let activeAssetId = null;
+    let placedItems = [];
+    let lastAiAdvice = "No audit run yet."
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map-viewport"), {
+        center: { lat: 30.3753, lng: 69.3451 },
+        zoom: 5.5,
+        mapTypeId: 'roadmap',
+        mapTypeControl: false
+      });
+
+      const searchInput = document.getElementById("map-search-input");
+      const suggestionsBox = document.getElementById("custom-suggestions");
+
+      searchInput.addEventListener("input", async () => {
+        const query = searchInput.value.trim();
+        if (query.length < 3) {
+          suggestionsBox.innerHTML = "";
+          return;
+        }
+
+        try {
+          const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=30.3753&lon=69.3451&limit=5`);
+          const data = await response.json();
+          suggestionsBox.innerHTML = "";
+
+          data.features.forEach(feature => {
+            const item = document.createElement("div");
+            item.className = "suggestion-item";
+
+            const name = feature.properties.name || "";
+            const city = feature.properties.city ? `, ${feature.properties.city}` : "";
+            const country = feature.properties.country ? `, ${feature.properties.country}` : "";
+            item.innerText = `${name}${city}${country}`;
+
+            item.addEventListener("click", () => {
+              const [lng, lat] = feature.geometry.coordinates;
+              const location = new google.maps.LatLng(lat, lng);
+
+              map.setCenter(location);
+              map.setZoom(14);
+
+              searchInput.value = item.innerText;
+              suggestionsBox.innerHTML = "";
+              appendChatMessage('bot', `Viewport moved to: ${item.innerText}`);
+            });
+
+            suggestionsBox.appendChild(item);
+          });
+        } catch (err) {
+          console.error("Geocoding fetch error:", err);
+        }
+
+      });
+
+      map.addListener("click", (e) => {
+        suggestionsBox.innerHTML = "";
+        handleMapClick(e.latLng);
+      });
+
+      // ... inside initMap ...
+
+      // --- PROJECT LOADING ENGINE ---
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectId = urlParams.get('project_id');
+
+      if (projectId) {
+        fetch(`/api/project/${projectId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.map_state) {
+              const savedState = JSON.parse(data.map_state);
+              placedItems = savedState.nodes || [];
+
+              placedItems.forEach(node => {
+                const matchedAsset = assets.find(a => a.name === node.name);
+                const iconUrl = matchedAsset ? matchedAsset.icon : '/static/assets/pixelatedskyscraper.jpg';
+
+                new google.maps.Marker({
+                  position: { lat: node.lat, lng: node.lng },
+                  map: map,
+                  title: node.name,
+                  icon: {
+                    url: iconUrl,
+                    scaledSize: new google.maps.Size(32, 32)
+                  }
+                });
+              });
+
+              placedItemsDisplayed();
+
+if (data.fileName) {
+    const nameInput = document.getElementById("blueprint-filename");
+    if (nameInput) nameInput.value = data.fileName;
+}
+// ...
+
+              if (savedState.audit) {
+                  const chatBox = document.getElementById('chat-box');
+                  if (chatBox) {
+                      chatBox.innerHTML = savedState.audit;
+                      chatBox.scrollTop = chatBox.scrollHeight;
+                  }
+              }
+              appendChatMessage('bot', `System: Successfully loaded ${placedItems.length} buildings.`);
+            }
+          })
+          .catch(err => console.error("Error loading project data:", err));
+      } // Closes if(projectId)
+    }
+
+    function setActiveAsset(id) {
+      if (activeAssetId === id) {
+        activeAssetId = null;
+      } else {
+        activeAssetId = id;
+      }
+
+      document.querySelectorAll('.asset-button').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`asset-btn-${activeAssetId}`);
+
+      if (activeAssetId && activeBtn) {
+        activeBtn.classList.add('active');
+        const targetAsset = assets.find(a => a.id === activeAssetId);
+
+      }
+    }
+
+    function handleMapClick(latLng) {
+      if (!activeAssetId) return;
+
+      const currentAsset = assets.find(a => a.id === activeAssetId);
+      if (!currentAsset) return;
+
+      const lat = latLng.lat();
+      const lng = latLng.lng();
+
+      placedItems.push({
+        uniqueId: Date.now(),
+        name: currentAsset.name,
+        lat: lat,
+        lng: lng
+      });
+
+      new google.maps.Marker({
+        position: latLng,
+        map: map,
+        title: currentAsset.name,
+        icon: {
+          url: currentAsset.icon,
+          scaledSize: new google.maps.Size(32, 32)
+        }
+      });
+
+      placedItemsDisplayed();
+      setActiveAsset(null);
+    }
+
+    function placedItemsDisplayed() {
+      const telemetry = document.getElementById('telemetry-box');
+      const exportBtn = document.getElementById('export-btn');
+      if (placedItems.length > 0) {
+        exportBtn.disabled = false;
+        telemetry.innerHTML = `✓ Live Map Nodes: ${placedItems.length}`;
+      }
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('user-input');
+      const prompt = input.value.trim();
+      if (!prompt) return;
+
+      appendChatMessage('user', prompt);
+      input.value = '';
+
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: prompt})
+      }).then(function(response){
+        return response.json();
+      }).then(function(data){
+
+         appendChatMessage('bot', data.reply);
+      });
+    }
+
+    function appendChatMessage(sender, text) {
+      const chatBox = document.getElementById('chat-box');
+      const msg = document.createElement('div');
+      msg.style.marginBottom = "8px";
+      msg.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${text}`;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+   async function handleExportJSON() {
+    if (placedItems.length === 0) return;
+
+    const nameInput = document.getElementById("blueprint-filename");
+    let projectName = (nameInput && nameInput.value.trim() !== "")
+                      ? nameInput.value.trim()
+                      : "Untitled-Blueprint";
+
+    const chatBox = document.getElementById('chat-box');
+    const savedAuditLog = chatBox ? chatBox.innerHTML : "";
+
+    const payload = {
+        name: projectName,
+        map_state: JSON.stringify({ nodes: placedItems, audit: savedAuditLog })
+    };
+
+    // Check if we are editing an existing project
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project_id');
+
+    // If projectId exists, use a PUT (Update) route; otherwise, use POST (Save)
+    const url = projectId ? `/update_project/${projectId}` : '/save_project';
+    const method = projectId ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if(response.ok) {
+           window.location.href = result.redirect_url;
+        } else {
+           alert("Failed to save changes.");
+        }
+    } catch (error) {
+        console.error("Save error:", error);
+    }
+}
+
+    /* =========================================================================
+       NEW LOGIC: Target Objectives Modal & Automated Layout Audit Handling
+       ========================================================================= */
+    function toggleObjectivesModal() {
+      const modal = document.getElementById('objectives-modal');
+      if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        // Auto-load previously saved objectives if present in localStorage
+        const savedObjectives = localStorage.getItem('urbanObjectives');
+        if (savedObjectives) {
+          document.getElementById('objectives-textarea').value = savedObjectives;
+        }
+      } else {
+        modal.style.display = 'none';
+      }
+    }
+
+    function saveObjectivesData() {
+      const currentText = document.getElementById('objectives-textarea').value.trim();
+      localStorage.setItem('urbanObjectives', currentText);
+      toggleObjectivesModal();
+
+    }
+
+    async function triggerLayoutAudit() {
+  if (placedItems.length === 0) {
+    appendChatMessage('bot', 'Audit System: Cannot run audit analysis on an empty workspace map grid.');
+
+  }
+
+  appendChatMessage('bot', `Audit Triggered! Analyzing ${placedItems.length} nodes against your set goals...`);
+
+
+  const currentObjectives = localStorage.getItem('urbanObjectives') || "None specified.";
+
+
+    // 2. Fire the network request and AWAIT the network execution safely
+        // Remove "const response =" from this line
+await fetch("/auditAI", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        message: placedItems,
+        objectives: currentObjectives
+    })
+}).then(function(response){
+    return response.json();
+}).then(function(data){
+
+
+    const readableReport = JSON.stringify(data.reply, null, 2);
+    lastAiAdvice = readableReport;
+    appendChatMessage('bot', readableReport);
+});
+
+    }
+
+
+  </script>
+
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcMzUiSL0Ep8DjO8KWv01aqJKIU2KUsNI&libraries=places&callback=initMap"></script>
+
+</body>
+
+</html>

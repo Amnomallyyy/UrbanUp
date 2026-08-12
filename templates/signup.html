@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 60px auto; padding: 25px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-family: sans-serif;">
+    <h2 style="margin-top: 0; color: #1e293b;">Create Account</h2>
+    
+  <form action="{{ url_for('auth.signup') }}" method="POST">
+        <div style="margin-bottom: 15px;">
+            <label for="firstName" style="display: block; margin-bottom: 5px; font-weight: bold; color: #475569;">First Name</label>
+            <input type="text" id="firstName" name="firstName" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="email" style="display: block; margin-bottom: 5px; font-weight: bold; color: #475569;">Email Address</label>
+            <input type="email" id="email" name="email" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="password1" style="display: block; margin-bottom: 5px; font-weight: bold; color: #475569;">Password</label>
+            <input type="password" id="password1" name="password1" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="password2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #475569;">Confirm Password</label>
+            <input type="password" id="password2" name="password2" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        
+        <button type="submit" style="width: 100%; padding: 10px; background-color: #10b981; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+            Sign Up
+        </button>
+    </form>
+    <script>
+document.getElementById('signupForm').addEventListener('submit', function(event) {
+    // Stop the browser from automatically refreshing the page
+    event.preventDefault(); 
+
+    // Automatically pack up all input fields based on their "name" attributes
+    const formData = new FormData(this);
+
+    // Send the data via fetch to your Flask blueprint route
+    fetch("{{ url_for('auth.signup') }}", {
+        method: "POST",
+        body: formData // Sends data in a format request.form understands!
+    })
+    .then(response => {
+        // If Python uses a redirect (like redirect(url_for('auth.web'))), follow it
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text();
+        }
+    })
+    .then(data => {
+        if (data) {
+            console.log("Server response:", data);
+            // If you sent back plain text like "This is the home Page", handle it here:
+            if (data.includes("home Page")) {
+                alert("Success! Account Created.");
+            }
+        }
+    })
+    .catch(error => {
+        console.error("Fetch Error:", error);
+        alert("Something went wrong with the submission.");
+    });
+});
+</script>
+    
+    <p style="margin-top: 15px; font-size: 14px; text-align: center; color: #64748b;">
+        Already have an account? <a href="{{ url_for('auth.login') }}" style="color: #2563eb; text-decoration: none;">Login here</a>
+    </p>
+</div>
+{% endblock %} //this is signup.htmml
